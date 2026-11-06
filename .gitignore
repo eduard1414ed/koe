@@ -1,0 +1,12 @@
+tools/bakeoff/data/
+tools/bakeoff/.build/
+tools/bakeoff/.swiftpm/
+.build/
+testdata/
+dist/
+site/node_modules/
+site/.astro/
+site/.env
+site/stats/node_modules/
+site/stats/*.bin
+site/stats/*.zip

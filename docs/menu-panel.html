@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Koe menu panel</title>
+<!-- Mockup of the menu bar panel (docs/SPEC.md, 6.8). Sizes are in points, 1:1. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+body{margin:0;padding:24px;background:#3a3d44;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;-webkit-font-smoothing:antialiased}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,328px);gap:24px;align-items:start}
+.cap{font-size:12px;color:rgba(255,255,255,.7);margin:0 0 8px 4px}
+.p{width:328px;box-sizing:border-box;padding:12px;background:#1e1e20;border:1px solid rgba(255,255,255,.12);border-radius:16px;color:rgba(255,255,255,.92);font-size:13px;line-height:16px;display:flex;flex-direction:column;gap:12px}
+.hd{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:28px}.pl{justify-self:end;height:20px;padding:0 8px;border-radius:10px;font-size:11px;display:flex;align-items:center;gap:6px}.pl i{width:6px;height:6px;border-radius:3px}
+.rec{height:40px;box-sizing:border-box;border-radius:8px;display:flex;align-items:center;gap:10px;padding:0 12px;font-weight:600}.rec small{margin-left:auto;font-size:11px;font-weight:400;color:rgba(255,255,255,.5)}
+.tb{display:flex;gap:2px;padding:3px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}.tb span{flex:1;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;color:rgba(255,255,255,.5)}.tb .a{background:rgba(10,132,255,.22);color:#4da3ff}
+.sec{display:flex;flex-direction:column;gap:8px}.sh{display:flex;justify-content:space-between;align-items:center;height:16px;padding:0 4px;font-size:11px;font-weight:600;letter-spacing:.06em;color:rgba(255,255,255,.5)}.sh em{font-style:normal;letter-spacing:0;font-weight:400}
+.c{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px}
+.r{position:relative;display:grid;grid-template-columns:20px minmax(0,1fr) auto;column-gap:10px;align-items:start;padding:10px 12px}.r+.r:before{content:"";position:absolute;top:0;left:42px;right:0;height:1px;background:rgba(255,255,255,.08)}
+.ic{font-size:16px;line-height:16px;text-align:center;color:#4da3ff}
+.tx b{display:block;font-weight:600}.tx s{display:block;margin-top:2px;text-decoration:none;font-size:11px;line-height:14px;color:rgba(255,255,255,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt{font-size:11px;line-height:16px;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}
+.sw{width:32px;height:18px;margin-top:-1px;border-radius:9px;background:#0a84ff;position:relative}.sw:after{content:"";position:absolute;right:2px;top:2px;width:14px;height:14px;border-radius:7px;background:#fff}
+.cb,.rd{justify-self:center;width:16px;height:16px;box-sizing:border-box;border:1px solid rgba(255,255,255,.3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}.rd{border-radius:8px}.on{background:#0a84ff;border-color:#0a84ff}.rd.on:after{content:"";width:6px;height:6px;border-radius:3px;background:#fff}
+.ctl{display:flex;align-items:center;gap:8px;height:16px;margin-top:8px}.ctl>i{font-size:14px;color:rgba(255,255,255,.45)}
+.tr{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.12);position:relative}.tr i{position:absolute;left:0;top:0;height:4px;border-radius:2px;background:#0a84ff}.tr b{position:absolute;top:-5px;width:14px;height:14px;border-radius:7px;background:#fff;margin-left:-7px}.v{width:36px;text-align:right;font-size:11px;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}
+.lv{display:flex;gap:2px;align-items:flex-end;height:12px;margin-top:2px}.lv i{width:3px;border-radius:1px;background:rgba(255,255,255,.15)}.lv i.g{background:#30d158}
+.pop{height:20px;margin-top:-2px;padding:0 6px 0 8px;border-radius:6px;background:rgba(255,255,255,.1);font-size:11px;display:flex;align-items:center;gap:2px;color:rgba(255,255,255,.8)}
+.nm{display:flex;align-items:center;gap:8px}.ap{width:16px;height:16px;border-radius:4px;flex:none;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff}.ind{padding-left:24px}
+.fi{width:128px;height:22px;margin-top:-3px;box-sizing:border-box;border-radius:6px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);font-size:12px;padding:0 8px;display:flex;align-items:center}
+.fn{font-size:11px;line-height:14px;color:rgba(255,255,255,.45);padding:0 4px}
+.ft{display:flex;gap:8px}.ft span{flex:1;height:30px;border-radius:8px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:rgba(255,255,255,.7)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs><symbol id="km" viewBox="11 -768 1605 843"><path d="M374 0 134-241 370-470H457L200-223L203-263L467 0ZM71 0V-708H141V0Z"/><g transform="translate(374 -650) scale(33.33333)"><path fill-rule="evenodd" d="M19.71 12.00L19.7 12.4 19.6 13.2 19.4 14.0 19.1 14.7 18.7 15.4 18.3 16.1 17.8 16.7 17.3 17.3 16.8 17.9 16.1 18.3 15.4 18.7 14.7 19.0 14.0 19.4 13.2 19.7 12.4 19.9 11.6 19.9 10.7 19.9 9.9 19.9 9.1 19.6 8.3 19.4 7.5 19.0 6.7 18.6 6.1 17.9 5.6 17.2 5.1 16.5 4.7 15.7 4.3 14.9 4.2 14.1 4.0 13.3 4.0 12.4 4.0 11.6 4.2 10.8 4.3 9.9 4.5 9.1 4.7 8.3 5.2 7.6 5.8 6.9 6.3 6.3 7.0 5.8 7.7 5.3 8.4 5.0 9.2 4.8 10.0 4.7 10.8 4.7 11.6 4.8 12.4 5.0 13.1 5.1 13.8 5.2 14.5 5.5 15.1 5.9 15.8 6.2 16.4 6.6 17.0 7.0 17.6 7.4 18.2 8.0 18.7 8.6 19.1 9.3 19.3 10.1 19.5 10.8 19.6 11.6ZM18.66 11.65L18.6 11.3 18.3 10.7 18.0 10.1 17.6 9.5 17.2 9.0 16.8 8.5 16.3 8.1 15.9 7.7 15.4 7.3 14.9 7.0 14.4 6.7 13.8 6.4 13.2 6.1 12.7 5.9 12.0 5.7 11.3 5.6 10.6 5.6 9.9 5.7 9.2 5.8 8.6 6.1 8.0 6.4 7.4 6.9 6.9 7.4 6.5 8.0 6.3 8.7 6.3 9.4 6.3 10.2 6.4 10.8 6.5 11.4 6.8 12.0 7.2 12.5 7.6 12.9 7.9 13.3 8.2 13.7 8.4 14.1 8.7 14.4 8.9 14.8 9.1 15.2 9.3 15.7 9.6 16.1 10.0 16.5 10.4 16.9 10.9 17.3 11.4 17.7 12.0 17.9 12.6 18.0 13.3 18.0 13.9 17.9 14.6 17.8 15.2 17.5 15.8 17.2 16.3 16.8 16.9 16.4 17.4 15.9 17.8 15.3 18.1 14.7 18.3 14.1 18.6 13.4 18.7 12.7 18.7 12.0Z"/></g><path d="M1342 10Q1271 10 1215-22Q1159-54 1126.5-110Q1094-166 1094-236Q1094-305 1126-360.5Q1158-416 1213-448Q1268-480 1336-480Q1400-480 1449.5-451Q1499-422 1527.5-370.5Q1556-319 1556-252Q1556-244 1555-233.5Q1554-223 1551-209H1144V-269H1513L1488-247Q1489-299 1470.5-336.5Q1452-374 1417.5-394.5Q1383-415 1334-415Q1283-415 1245-393Q1207-371 1185.5-331.5Q1164-292 1164-238Q1164-184 1186.5-143Q1209-102 1249.5-79Q1290-56 1343-56Q1386-56 1422-71.5Q1458-87 1483-118L1528-72Q1495-33 1446.5-11.5Q1398 10 1342 10Z"/></symbol></defs></svg>
+<div class="grid">
+
+<div><p class="cap">1 · Microphone</p><div class="p">
+<div class="hd"><span></span><svg width="46" height="24" fill="#fff"><use href="#km"/></svg><span class="pl" style="background:rgba(48,209,88,.15);color:#30d158"><i style="background:#30d158"></i>Ready</span></div>
+<div class="rec" style="background:rgba(255,69,58,.15);border:1px solid rgba(255,69,58,.35)"><span style="width:12px;height:12px;border-radius:6px;background:#ff453a"></span>Start recording<small>3 tracks</small></div>
+<div class="tb"><span class="a"><i class="ti ti-microphone"></i></span><span><i class="ti ti-volume"></i></span><span><i class="ti ti-wave-sine"></i></span><span><i class="ti ti-file-text"></i></span></div>
+<div class="sec"><div class="sh">MICROPHONE</div><div class="c"><div class="r"><i class="ti ti-microphone ic"></i><div class="tx"><b>Record the microphone</b><s>2 devices · each is its own track</s></div><span class="sw"></span></div></div></div>
+<div class="sec"><div class="sh">DEVICES<em>Tick one or more</em></div><div class="c">
+<div class="r"><span class="cb on"><i class="ti ti-check"></i></span><div class="tx"><b>System default</b><s>MacBook Pro Microphone</s><div class="ctl"><i class="ti ti-volume-2"></i><div class="tr"><i style="width:50%"></i><b style="left:50%"></b></div><span class="v">100 %</span></div></div><span class="lv"><i class="g" style="height:4px"></i><i class="g" style="height:6px"></i><i class="g" style="height:8px"></i><i style="height:10px"></i><i style="height:12px"></i></span></div>
+<div class="r"><span class="cb"></span><div class="tx"><b>AirPods Pro</b></div><span></span></div>
+<div class="r"><span class="cb on"><i class="ti ti-check"></i></span><div class="tx"><b>Scarlett 2i2</b><s>Channel 1 of 2</s><div class="ctl"><i class="ti ti-volume-2"></i><div class="tr"><i style="width:70%;background:#ff9f0a"></i><b style="left:70%"></b></div><span class="v" style="color:#ff9f0a">140 %</span></div></div><span class="pop">Ch 1<i class="ti ti-selector" style="font-size:11px"></i></span></div>
+</div><div class="sh" style="justify-content:flex-start;gap:6px"><i class="ti ti-chevron-right" style="font-size:11px"></i>OTHER DEVICES<em style="margin-left:auto;color:#4da3ff">2</em></div></div>
+<div class="ft"><span><i class="ti ti-folder"></i>Transcripts</span><span><i class="ti ti-settings"></i>Settings</span><span><i class="ti ti-power"></i>Quit</span></div>
+</div></div>
+
+<div><p class="cap">2 · System audio, while recording</p><div class="p">
+<div class="hd"><span></span><svg width="46" height="24" fill="#fff"><use href="#km"/></svg><span class="pl" style="background:rgba(255,69,58,.15);color:#ff6961"><i style="background:#ff453a"></i>Recording</span></div>
+<div class="rec" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16)"><span style="width:12px;height:12px;border-radius:3px;background:#fff"></span>Stop recording<small style="color:rgba(255,255,255,.92);font-size:13px;font-variant-numeric:tabular-nums">12:34</small></div>
+<div class="tb"><span><i class="ti ti-microphone"></i></span><span class="a"><i class="ti ti-volume"></i></span><span><i class="ti ti-wave-sine"></i></span><span><i class="ti ti-file-text"></i></span></div>
+<div class="sec"><div class="sh">SYSTEM AUDIO</div><div class="c"><div class="r"><i class="ti ti-volume ic"></i><div class="tx"><b>Record system audio</b><s>One track for the chosen apps</s><div class="ctl"><i class="ti ti-volume-2"></i><div class="tr"><i style="width:50%"></i><b style="left:50%"></b></div><span class="v">100 %</span></div></div><span class="sw" style="opacity:.4"></span></div></div></div>
+<div class="sec"><div class="sh">APPS<em>Locked while recording</em></div><div class="c" style="opacity:.55">
+<div class="r"><span class="rd"></span><div class="tx"><b>All apps</b></div><span></span></div>
+<div class="r"><span class="cb on"><i class="ti ti-check"></i></span><div class="tx"><div class="nm"><span class="ap" style="background:#2d8cff">Z</span><b>Zoom</b></div><s class="ind">Using the mic</s></div><span></span></div>
+<div class="r"><span class="cb on"><i class="ti ti-check"></i></span><div class="tx"><div class="nm"><span class="ap" style="background:#2aa3e0">T</span><b>Telegram</b></div><s class="ind">Playing</s></div><span></span></div>
+<div class="r"><span class="cb"></span><div class="tx"><div class="nm"><span class="ap" style="background:#3b82f6">S</span><b>Safari</b></div></div><span></span></div>
+</div><div class="fn">The level can be changed during recording.</div></div>
+<div class="ft"><span><i class="ti ti-folder"></i>Transcripts</span><span><i class="ti ti-settings"></i>Settings</span><span><i class="ti ti-power"></i>Quit</span></div>
+</div></div>
+
+<div><p class="cap">3 · Format</p><div class="p">
+<div class="hd"><span></span><svg width="46" height="24" fill="#fff"><use href="#km"/></svg><span class="pl" style="background:rgba(48,209,88,.15);color:#30d158"><i style="background:#30d158"></i>Ready</span></div>
+<div class="rec" style="background:rgba(255,69,58,.15);border:1px solid rgba(255,69,58,.35)"><span style="width:12px;height:12px;border-radius:6px;background:#ff453a"></span>Start recording<small>3 tracks</small></div>
+<div class="tb"><span><i class="ti ti-microphone"></i></span><span><i class="ti ti-volume"></i></span><span class="a"><i class="ti ti-wave-sine"></i></span><span><i class="ti ti-file-text"></i></span></div>
+<div class="sec"><div class="sh">QUALITY</div><div class="c">
+<div class="r"><span class="rd on"></span><div class="tx"><b>Compact</b><s>AAC, mono, 48 kHz · good for calls</s></div><span></span></div>
+<div class="r"><span class="rd"></span><div class="tx"><b>High</b><s>AAC, 256 kbps</s></div><span></span></div>
+<div class="r"><span class="rd"></span><div class="tx"><b>Lossless</b><s>WAV, 24-bit · podcasts, music</s></div><span></span></div>
+</div></div>
+<div class="sec"><div class="sh">NEXT RECORDING</div><div class="c">
+<div class="r"><i class="ti ti-stack-2 ic"></i><div class="tx"><b>Tracks</b></div><span class="rt">3</span></div>
+<div class="r"><i class="ti ti-database ic"></i><div class="tx"><b>Size</b></div><span class="rt">≈ 85 MB per hour</span></div>
+</div><div class="fn">Sound is recorded as is: no noise reduction.</div></div>
+<div class="ft"><span><i class="ti ti-folder"></i>Transcripts</span><span><i class="ti ti-settings"></i>Settings</span><span><i class="ti ti-power"></i>Quit</span></div>
+</div></div>
+
+<div><p class="cap">4 · Transcription, while transcribing</p><div class="p">
+<div class="hd"><span></span><svg width="46" height="24" fill="#fff"><use href="#km"/></svg><span class="pl" style="background:rgba(10,132,255,.18);color:#4da3ff"><i style="background:#0a84ff"></i>42 %</span></div>
+<div class="rec" style="background:rgba(255,69,58,.15);border:1px solid rgba(255,69,58,.35)"><span style="width:12px;height:12px;border-radius:6px;background:#ff453a"></span>Start recording<small>3 tracks</small></div>
+<div class="tb"><span><i class="ti ti-microphone"></i></span><span><i class="ti ti-volume"></i></span><span><i class="ti ti-wave-sine"></i></span><span class="a"><i class="ti ti-file-text"></i></span></div>
+<div class="sec"><div class="sh">TRANSCRIPTION</div><div class="c">
+<div class="r"><i class="ti ti-bolt ic"></i><div class="tx"><b>Transcribe automatically</b><s>Right after each recording</s></div><span class="sw"></span></div>
+<div class="r"><i class="ti ti-loader-2 ic"></i><div class="tx"><b>Recording from Nov 2, 14:02</b><s>2 more waiting</s><div class="ctl"><div class="tr"><i style="width:42%"></i></div></div></div><span class="rt">42 %</span></div>
+<div class="r"><i class="ti ti-alert-circle ic" style="color:#ff453a"></i><div class="tx"><b>1 failed</b></div><i class="ti ti-chevron-right" style="font-size:14px;line-height:16px;color:rgba(255,255,255,.35)"></i></div>
+</div></div>
+<div class="sec"><div class="sh">SAVE TO</div><div class="c">
+<div class="r"><span class="rd on"></span><div class="tx"><b>Documents/Koe</b></div><span class="rt">Default</span></div>
+<div class="r"><span class="rd"></span><div class="tx"><b>Work/Clients</b></div><span></span></div>
+<div class="r"><i class="ti ti-folder-plus ic"></i><div class="tx"><b style="color:#4da3ff;font-weight:400">Choose folder…</b></div><span></span></div>
+</div></div>
+<div class="sec"><div class="sh">NAMES</div><div class="c">
+<div class="r"><i class="ti ti-microphone ic"></i><div class="tx"><b>You</b></div><span class="fi">Alex</span></div>
+<div class="r"><i class="ti ti-users ic"></i><div class="tx"><b>Others</b></div><span class="fi" style="color:rgba(255,255,255,.4)">Speaker</span></div>
+</div></div>
+<div class="ft"><span><i class="ti ti-folder"></i>Transcripts</span><span><i class="ti ti-settings"></i>Settings</span><span><i class="ti ti-power"></i>Quit</span></div>
+</div></div>
+
+</div>
+</body>
+</html>

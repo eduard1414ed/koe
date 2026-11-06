@@ -1,0 +1,33 @@
+# Known Whisper hallucinations: phrases it "hears" in silence.
+# One phrase per line. Case, the letter ё and punctuation don't matter.
+# A phrase is matched as whole words. A piece of text is thrown away only if such phrases make up
+# at least 70% of its words ("Продолжение следует...", "Subtitles by the Amara.org community").
+# If a phrase comes up inside normal speech, the piece stays.
+# Anything thrown away is kept in raw/<track>.json under "filtered", so nothing is lost.
+
+# Russian
+продолжение следует
+субтитры сделал
+субтитры создавал
+субтитры подготовил
+субтитры делал
+редактор субтитров
+# names from the credits that Whisper tacks onto "Редактор субтитров …" — kept narrow so real speech isn't hit
+корректор а егорова
+а семкин
+а синецкая
+dimatorzok
+спасибо за просмотр
+спасибо за внимание друзья
+подписывайтесь на канал
+подписывайся на канал
+ставьте лайки
+
+# English
+subtitles by the amara org community
+amara org
+thank you for watching
+thanks for watching
+thank you so much for watching
+transcription by castingwords
+see you in the next video

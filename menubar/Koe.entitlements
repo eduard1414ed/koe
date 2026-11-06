@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  What the release is allowed to do beyond the hardened runtime's defaults (build.sh release signs with it).
+  The hardened runtime blocks the microphone unless it's asked for here, so this is the one thing Koe needs:
+
+  com.apple.security.device.audio-input — record the microphone. macOS still asks the person first
+      (NSMicrophoneUsageDescription in Info.plist).
+
+  Not needed, so not here:
+  - system audio (other apps' sound): Core Audio process taps have no entitlement; macOS asks the person
+    (NSAudioCaptureUsageDescription in Info.plist);
+  - the network (speech models, update checks): only sandboxed apps need com.apple.security.network.client,
+    and Koe isn't sandboxed (it isn't on the Mac App Store);
+  - JIT, unsigned memory, DYLD variables: the speech models run through Core ML.
+
+  Added by build.sh only to an ad-hoc signed release (no Developer ID certificate), never to this file:
+  com.apple.security.cs.disable-library-validation — the hardened runtime loads only libraries signed by the
+      same team as the app, and an ad-hoc signature has no team, so without it the app can't load its own
+      Sparkle.framework. With a Developer ID the app and the framework share a team and it isn't needed.
+-->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.device.audio-input</key><true/>
+</dict>
+</plist>
