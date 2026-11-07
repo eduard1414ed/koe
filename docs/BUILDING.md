@@ -87,7 +87,8 @@ is called `Koe`, so the script stops a running copy only by its exact path, neve
 ### Updates
 
 Koe's release looks for updates in `https://github.com/eduard1414ed/koe/releases/latest/download/appcast.xml`. Every
-GitHub release carries two files, `Koe-<version>.dmg` and `appcast.xml`, so "latest" always points at the newest feed.
+GitHub release carries `Koe-<version>.dmg` and `appcast.xml`, so "latest" always points at the newest feed. It also
+carries `Koe.dmg`, a copy with a name that never changes, for the download button on the website.
 
 Updates are signed with an EdDSA key. The public half is in `build.sh` (`SPARKLE_PUBLIC_KEY`); the private half lives
 only in the keychain of whoever publishes releases (Sparkle's `generate_keys`, account `com.tsarionov.koe`), never in
@@ -112,7 +113,8 @@ To publish a release:
 
    It reads the version from the app inside the DMG, signs the DMG with the key from the keychain and writes
    `dist/appcast.xml`. `--notes` is a piece of HTML with what's new, shown in the update window.
-4. Create a GitHub release tagged `v<version>` and attach `Koe-<version>.dmg` and `appcast.xml`.
+4. Create a GitHub release tagged `v<version>` and attach `Koe-<version>.dmg`, a copy of it named `Koe.dmg`, and
+   `appcast.xml`.
 
 **Testing an update without GitHub.** Build an older version and install it, build a newer one, make its feed with
 `--url-base http://127.0.0.1:8765/`, serve the folder (`python3 -m http.server 8765 --bind 127.0.0.1`), then:

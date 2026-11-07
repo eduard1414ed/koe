@@ -35,7 +35,9 @@ enum PanelMetrics {
     static let smallSize: CGFloat = 11
 }
 
-/// The panel is always dark (like the setup window), so these are fixed.
+/// The panel is always dark (like the setup window), so these are fixed. It's see-through, though: over a blue
+/// wallpaper it turns blue itself. So the accent is only for solid controls (switch, tick, slider, progress), where
+/// the white mark inside stays readable; what lies directly on the glass — the chosen tab, icons, words — is white.
 enum PanelColors {
     static let text = Color.white.opacity(0.92)
     static let secondary = Color.white.opacity(0.5)
@@ -43,6 +45,7 @@ enum PanelColors {
     static let border = Color.white.opacity(0.10)
     static let separator = Color.white.opacity(0.08)
     static let hover = Color.white.opacity(0.05)
+    static let selection = Color.white.opacity(0.22)
     static let accent = Color(nsColor: .controlAccentColor)
     static let red = Color(nsColor: .systemRed)
     static let green = Color(nsColor: .systemGreen)
@@ -54,7 +57,7 @@ enum PanelColors {
 /// One row of a card.
 struct PanelItem: Identifiable {
     enum Lead {
-        case symbol(String, Color = PanelColors.accent)
+        case symbol(String, Color = PanelColors.text)
         case check(Bool)
         case radio(Bool)
     }
@@ -75,7 +78,7 @@ struct PanelItem: Identifiable {
     var appIcon: NSImage? = nil
     var progress: Double? = nil
     var volume: PanelVolume? = nil
-    var accentTitle = false
+    var lightTitle = false
     var enabled = true
     var action: (() -> Void)? = nil
 
@@ -222,13 +225,13 @@ final class PanelModel: ObservableObject {
     var status: (text: String, color: Color) {
         if recording != nil { return (String(localized: "Recording"), PanelColors.red) }
         switch app.queue.phase {
-        case .transcribing(let f): return ("\(Int(f * 100)) %", PanelColors.accent)
-        case .downloading, .preparing: return (String(localized: "Getting ready"), PanelColors.accent)
-        case .names: return (String(localized: "Updating names"), PanelColors.accent)
+        case .transcribing(let f): return ("\(Int(f * 100)) %", PanelColors.text)
+        case .downloading, .preparing: return (String(localized: "Getting ready"), PanelColors.text)
+        case .names: return (String(localized: "Updating names"), PanelColors.text)
         case .paused: return (String(localized: "Paused"), PanelColors.secondary)
         case .idle: break
         }
-        if case .downloading = ModelStore.shared.activity { return (String(localized: "Downloading"), PanelColors.accent) }
+        if case .downloading = ModelStore.shared.activity { return (String(localized: "Downloading"), PanelColors.text) }
         if !failed.isEmpty { return (String(localized: "\(failed.count) failed"), PanelColors.orange) }
         return (String(localized: "Ready"), PanelColors.green)
     }
@@ -443,7 +446,7 @@ final class PanelModel: ObservableObject {
             })
         }
         folders.append(PanelItem(id: "folder-choose", title: String(localized: "Choose Folder…"), lead: .symbol("folder.badge.plus"),
-                                 accentTitle: true) { [unowned self] in
+                                 lightTitle: true) { [unowned self] in
             self.app.closePanel()
             self.app.pickCallFolder()
         })
@@ -674,8 +677,8 @@ struct PanelView: View {
                         .contentShape(RoundedRectangle(cornerRadius: M.buttonRadius))
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(active ? PanelColors.accent : PanelColors.secondary)
-                .background(RoundedRectangle(cornerRadius: M.buttonRadius).fill(active ? PanelColors.accent.opacity(0.22) : .clear))
+                .foregroundStyle(active ? Color.white : PanelColors.secondary)
+                .background(RoundedRectangle(cornerRadius: M.buttonRadius).fill(active ? PanelColors.selection : .clear))
                 .help(t.title)
                 .accessibilityLabel(t.title)
                 .accessibilityAddTraits(active ? .isSelected : [])
@@ -731,7 +734,7 @@ struct PanelSectionView: View {
                             .rotationEffect(.degrees(more.open ? 90 : 0))
                         Text(more.title.uppercased()).tracking(0.6)
                         Spacer()
-                        Text("\(more.items.count)").foregroundStyle(PanelColors.accent)
+                        Text("\(more.items.count)").foregroundStyle(Color.white.opacity(0.75))
                     }
                     .font(.system(size: M.smallSize, weight: .semibold))
                     .foregroundStyle(PanelColors.secondary)
@@ -823,8 +826,8 @@ struct PanelRow: View {
                 HStack(spacing: 8) {
                     if let icon = item.appIcon { Image(nsImage: icon).resizable().frame(width: 16, height: 16) }
                     Text(item.title)
-                        .font(.system(size: M.titleSize, weight: item.accentTitle ? .regular : .semibold))
-                        .foregroundStyle(item.accentTitle ? PanelColors.accent : PanelColors.text)
+                        .font(.system(size: M.titleSize, weight: item.lightTitle ? .regular : .semibold))
+                        .foregroundStyle(PanelColors.text)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
