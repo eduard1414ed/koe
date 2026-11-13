@@ -4,7 +4,7 @@
 // Where names come from:
 //   - Settings: "Your name" (the first microphone track) and "Other people" (system audio). A track named in
 //     Settings → Inputs keeps its name (name_fixed in raw/*.json);
-//   - speakers.json in the transcript folder: "speakers" — the voices told apart on the system track, label
+//   - speakers.json in the transcript folder (in its hidden .koe, MeetingFolder.swift): "speakers" — the voices told apart on the system track, label
 //     ("Speaker 1") → name; "tracks" — tracks renamed for this recording only, track ("mic-2", or "system" where voices
 //     weren't told apart) → name. The Names window writes it, it can be edited by hand. The same name on two rows is
 //     one person: their lines merge. The old speakers.toml is read once and turned into speakers.json.
@@ -32,7 +32,7 @@ enum SpeakerNames {
 
     /// The speakers' names of a transcript. If there's only the old speakers.toml, it becomes speakers.json.
     static func read(_ dir: URL) -> Saved {
-        let json = dir.appendingPathComponent(file), toml = dir.appendingPathComponent(oldFile)
+        let json = MeetingFolder.speakers(dir), toml = MeetingFolder.oldSpeakers(dir)
         if FileManager.default.fileExists(atPath: json.path) {
             guard let data = try? Data(contentsOf: json),
                   let o = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -62,7 +62,8 @@ enum SpeakerNames {
         var o: [String: Any] = ["about": about, "speakers": names.speakers]
         if !names.tracks.isEmpty { o["tracks"] = names.tracks }
         let data = try JSONSerialization.data(withJSONObject: o, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])
-        try data.write(to: dir.appendingPathComponent(file), options: .atomic)
+        try FileManager.default.createDirectory(at: MeetingFolder.data(dir), withIntermediateDirectories: true)
+        try data.write(to: MeetingFolder.speakers(dir), options: .atomic)
     }
 
     /// After a transcription: the voices' labels go into speakers.json (a new file, or added to the names given before).
@@ -195,7 +196,7 @@ enum SpeakerNames {
     /// Update the names in these transcripts (nil — all of them). A broken one doesn't stop the rest.
     static func refreshAll(_ dirs: [URL]?, settings: TranscriptSettings, notify: (String, String) -> Void) {
         if dirs == nil { tlog("updating the names in all transcripts") }
-        for dir in dirs ?? Meetings.dirs() where FileManager.default.fileExists(atPath: dir.appendingPathComponent("meta.json").path) {
+        for dir in dirs ?? Meetings.dirs() where MeetingFolder.isTranscript(dir) {
             do {
                 try refresh(dir, settings: settings, notify: notify)
             } catch {
@@ -206,7 +207,8 @@ enum SpeakerNames {
 
     /// transcript.md with the names as they are now — without transcribing again. raw/*.json and meta.json get the names too.
     static func refresh(_ dir: URL, settings: TranscriptSettings, notify: (String, String) -> Void) throws {
-        let metaURL = dir.appendingPathComponent("meta.json")
+        MeetingFolder.tidy(dir)   // a folder from the command line may be of the old layout
+        let metaURL = MeetingFolder.meta(dir)
         var meta = readJSON(metaURL)
         guard let src = meta["source"] as? [String: Any], var rec = meta["recording"] as? [String: Any],
               var parts = rec["participants"] as? [[String: Any]] else {
@@ -232,7 +234,7 @@ enum SpeakerNames {
         var tracks: [TranscriptTrack] = []
         for i in parts.indices {
             guard let rawFile = parts[i]["raw_file"] as? String else { throw TranscriberError("meta.json has a track without raw_file") }
-            let rawURL = dir.appendingPathComponent(rawFile)
+            let rawURL = MeetingFolder.raw(dir, rawFile)
             guard let data = try? Data(contentsOf: rawURL),
                   let before = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                 throw TranscriberError("\(rawURL.path) can't be read")
@@ -303,7 +305,7 @@ enum SpeakerNames {
         let md = renderMarkdown(started: started, zone: zone, duration: duration, tracks: tracks,
                                 apps: systemApps(src["system_source"]), lines: buildLines(tracks))
         protectManualEdits(dir, newMarkdown: md, notify: notify)
-        let mdURL = dir.appendingPathComponent("transcript.md")
+        let mdURL = MeetingFolder.transcript(dir)
         if (try? Data(contentsOf: mdURL)) != Data(md.utf8) { try Data(md.utf8).write(to: mdURL, options: .atomic) }
         rec["participants"] = parts
         meta["recording"] = rec

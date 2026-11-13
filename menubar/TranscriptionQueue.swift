@@ -72,14 +72,18 @@ enum Registry {
 
 enum Meetings {
     /// All finished transcripts: in the default folder and wherever recordings put them (the registry remembers each one).
+    /// A folder of the old layout (working files not in .koe yet) is tidied on the way (MeetingFolder.tidy).
     static func dirs() -> [URL] {
         var roots = Set([TranscriptSettings.load().meetingsFolder])
         for r in Registry.recordings.values { if let d = r["out_dir"] as? String { roots.insert((d as NSString).deletingLastPathComponent) } }
         var out = Set<String>()
         for root in roots {
-            for name in (try? FileManager.default.contentsOfDirectory(atPath: root)) ?? [] {
-                let d = (root as NSString).appendingPathComponent(name)
-                if FileManager.default.fileExists(atPath: (d as NSString).appendingPathComponent("meta.json")) { out.insert(d) }
+            // hidden files and a transcript being written (<folder>.partial) aren't transcripts
+            for name in (try? FileManager.default.contentsOfDirectory(atPath: root)) ?? [] where !name.hasPrefix(".") && !name.hasSuffix(".partial") {
+                let d = URL(fileURLWithPath: (root as NSString).appendingPathComponent(name))
+                guard MeetingFolder.isTranscript(d) else { continue }
+                MeetingFolder.tidy(d)
+                out.insert(d.path)
             }
         }
         return out.sorted().map { URL(fileURLWithPath: $0) }
@@ -88,7 +92,7 @@ enum Meetings {
     /// Transcripts lying in the folders that the registry doesn't know as done (for example, made by hand) — add them.
     static func adoptExisting() {
         let found = dirs().compactMap { d -> (String, URL, [String: Any])? in
-            let meta = readJSON(d.appendingPathComponent("meta.json"))
+            let meta = readJSON(MeetingFolder.meta(d))
             guard let src = meta["source"] as? [String: Any], let id = src["session_id"] as? String else { return nil }
             return ("local:\(id)", d, meta)
         }
@@ -106,9 +110,13 @@ enum Meetings {
     static func sessionDir(_ key: String) -> URL? {
         let id = key.hasPrefix("local:") ? String(key.dropFirst(6)) : key
         var cands: [URL] = []
-        if let out = Registry.recordings[key]?["out_dir"] as? String { cands.append(URL(fileURLWithPath: out).appendingPathComponent("audio")) }
+        if let out = Registry.recordings[key]?["out_dir"] as? String {
+            let dir = URL(fileURLWithPath: out)
+            MeetingFolder.tidy(dir)
+            cands.append(MeetingFolder.audio(dir))
+        }
         cands.append(Identity.inboxDir.appendingPathComponent(id))
-        return cands.first { FileManager.default.fileExists(atPath: $0.appendingPathComponent("session.json").path) }
+        return cands.first { FileManager.default.fileExists(atPath: sessionFile($0).path) }
     }
 
     /// Finished recordings in the inbox (session.json exists) that aren't done and weren't given up on.
@@ -133,26 +141,37 @@ enum Meetings {
         }
     }
 
-    /// A transcribed recording's audio and session.json move from the inbox into audio/ of its transcript.
+    /// A transcribed recording's audio moves from the inbox into audio/ of its transcript, its session.json into .koe.
     @discardableResult
     static func moveAudio(_ sessionDir: URL, to outDir: URL) -> Bool {
-        var target = outDir.appendingPathComponent("audio")
+        var target = MeetingFolder.audio(outDir)
         if sessionDir.standardizedFileURL.path == target.standardizedFileURL.path { return true }
         // shouldn't happen; don't overwrite — put it next to it
         if FileManager.default.fileExists(atPath: target.path) { target = outDir.appendingPathComponent("audio_\(sessionDir.lastPathComponent)") }
         do {
             try FileManager.default.moveItem(at: sessionDir, to: target)
             tlog("recording audio moved: \(target.path)")
-            return true
         } catch {
             tlog("couldn't move the audio \(sessionDir.path) to \(outDir.path): \(error.localizedDescription)")
             return false
         }
+        // session.json is Koe's, not the person's: into .koe (in audio_<id> — the odd case above — it stays with the tracks)
+        guard target.lastPathComponent == MeetingFolder.audioName else { return true }
+        let from = target.appendingPathComponent("session.json"), to = MeetingFolder.session(outDir)
+        do {
+            try FileManager.default.createDirectory(at: MeetingFolder.data(outDir), withIntermediateDirectories: true)
+            if FileManager.default.fileExists(atPath: to.path) { try FileManager.default.removeItem(at: to) }
+            try FileManager.default.moveItem(at: from, to: to)
+        } catch {
+            // the audio is in place; session.json found in audio/ still works (sessionFile)
+            tlog("couldn't move session.json into \(MeetingFolder.dataName) in \(outDir.lastPathComponent): \(error.localizedDescription)")
+        }
+        return true
     }
 
     /// The transcript's speakers.json (or the old speakers.toml not turned into it yet), if there is one.
     static func speakersFile(_ dir: URL) -> String? {
-        [SpeakerNames.file, SpeakerNames.oldFile].map { dir.appendingPathComponent($0).path }
+        [MeetingFolder.speakers(dir), MeetingFolder.oldSpeakers(dir)].map(\.path)
             .first { FileManager.default.fileExists(atPath: $0) }
     }
 
@@ -165,14 +184,14 @@ enum Meetings {
     /// The rows of the Names window for one transcript: each microphone track, and the voices of system audio (or the
     /// system track itself where voices weren't told apart). Tracks that aren't transcribed have nothing to name.
     static func nameRows(_ dir: URL) -> [SpeakerRow] {
-        let meta = readJSON(dir.appendingPathComponent("meta.json"))
+        let meta = readJSON(MeetingFolder.meta(dir))
         let parts = (meta["recording"] as? [String: Any])?["participants"] as? [[String: Any]] ?? []
-        let session = readJSON(dir.appendingPathComponent("audio/session.json"))["tracks"] as? [String: [String: Any]] ?? [:]
+        let session = readJSON(sessionFile(MeetingFolder.audio(dir)))["tracks"] as? [String: [String: Any]] ?? [:]
         let mics = parts.filter { $0["role"] as? String == "mic" }.count
         var rows: [SpeakerRow] = []
         for p in parts {
             guard let rawFile = p["raw_file"] as? String else { continue }
-            let raw = readJSON(dir.appendingPathComponent(rawFile))
+            let raw = readJSON(MeetingFolder.raw(dir, rawFile))
             guard raw["transcribe"] as? Bool != false else { continue }
             let id = raw["username"] as? String ?? ""
             let name = raw["name"] as? String ?? id
@@ -181,7 +200,7 @@ enum Meetings {
                  speaker: (s["speaker"] as? NSNumber)?.intValue)
             }
             // where the track's audio is, to listen to a bit of someone's speech
-            let file = (raw["audio_file"] as? String).map { dir.appendingPathComponent("audio").appendingPathComponent($0) }
+            let file = (raw["audio_file"] as? String).map { MeetingFolder.audio(dir).appendingPathComponent($0) }
             let info = session[id] ?? [:]
             let rate = (info["sample_rate"] as? NSNumber)?.doubleValue ?? 48_000
             let shift = ((info["encoder_delay_frames"] as? NSNumber)?.doubleValue ?? 0) / (rate > 0 ? rate : 48_000)
@@ -285,7 +304,7 @@ final class TranscriptionWork: @unchecked Sendable {
             tlog("already transcribed: \(key) → \(done.dir.path)")
             outDir = done.dir
         }
-        let meta = readJSON(outDir.appendingPathComponent("meta.json"))
+        let meta = readJSON(MeetingFolder.meta(outDir))
         var entry: [String: Any] = ["status": "done", "out_dir": outDir.path, "source": "local",
                                     "processed_at": (meta["processing"] as? [String: Any])?["processed_at"] ?? NSNull()]
         if let f = Meetings.speakersFile(outDir) { entry["speakers_file"] = f }
@@ -488,7 +507,7 @@ final class TranscriptionQueue {
                 Task { @MainActor in self.notify?(title, text, nil) }
             })
             modelsProblem = nil
-            let meta = readJSON(out.appendingPathComponent("meta.json"))
+            let meta = readJSON(MeetingFolder.meta(out))
             let duration = ((meta["recording"] as? [String: Any])?["duration_s"] as? NSNumber)?.doubleValue ?? 0
             notify?(String(localized: "Transcript ready"),
                     String(localized: "\(out.lastPathComponent) — \(humanDuration(duration)), took \(humanDuration(Date().timeIntervalSince(started)))"),
@@ -604,15 +623,15 @@ final class TranscriptionQueue {
         // the files' times as of the last update ("speakers_mtimes" was Python's, of speakers.toml only: a new key, so
         // every old speakers.toml is turned into speakers.json once)
         let seen = notes["speakers_files_mtimes"] as? [String: Double] ?? [:]
-        let changed = Set(speakersFiles().filter { seen[$0.key] != $0.value }.map { ($0.key as NSString).deletingLastPathComponent })
+        let changed = Set(speakersFiles().filter { seen[$0.key] != $0.value }.map { MeetingFolder.owner(ofDataFile: $0.key) })
         if !changed.isEmpty { jobs.append(QueueJob(kind: .refreshNames, dirs: changed.sorted())) }
     }
 
     private func speakersFiles() -> [String: Double] {
         var out: [String: Double] = [:]
         for d in Meetings.dirs() {
-            for name in [SpeakerNames.file, SpeakerNames.oldFile] {
-                let f = d.appendingPathComponent(name).path
+            for file in [MeetingFolder.speakers(d), MeetingFolder.oldSpeakers(d)] {
+                let f = file.path
                 if let m = (try? FileManager.default.attributesOfItem(atPath: f))?[.modificationDate] as? Date { out[f] = m.timeIntervalSince1970 }
             }
         }

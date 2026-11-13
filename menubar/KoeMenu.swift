@@ -679,7 +679,7 @@ final class App: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     func reprocess(_ key: String) {
         let title = meetingTitle(registry[key]?["out_dir"] as? String ?? key)
         guard confirm(String(localized: "Retranscribe the recording from \(title)?"),
-                      String(localized: "This rewrites transcript.md, raw/ and meta.json. If you edited transcript.md by hand, your version is kept next to it as transcript.edited-<date>.md. Nothing else in the folder is touched."),
+                      String(localized: "This rewrites transcript.md (and Koe's own files in the hidden .koe folder). If you edited transcript.md by hand, your version is kept next to it as transcript.edited-<date>.md. The audio and anything else in the folder aren't touched."),
                       ok: String(localized: "Retranscribe")) else { return }
         enqueueAgain(key)
     }

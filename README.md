@@ -224,7 +224,7 @@ Things to know:
   up the microphones too.
 - Two microphones in one room each hear everybody. When almost the same line is on two microphone tracks at the
   same time, Koe keeps it on the track where it was louder at that moment and drops it from the other one (the
-  dropped copy stays in `raw/<track>.json` under `filtered`, with both levels). The rules for "almost the same"
+  dropped copy stays in `.koe/raw/<track>.json` under `filtered`, with both levels). The rules for "almost the same"
   are the ones for echo: at least 70 % of the text matches within 1.5 seconds; a line of one or two words only
   counts if the other track has exactly the same line. So a short word can still show up twice when one
   microphone heard it as its own line and the other as part of a longer one. "Louder" is how loud the track
@@ -278,7 +278,8 @@ name merges them: it's the same person. Renaming a microphone here renames it in
 default names are in Settings → Transcription → Microphone tracks). Click **Save**, and the transcript updates in a few
 seconds without transcribing the audio again. All recordings are listed, old ones too.
 
-The names are kept in `speakers.json` in the recording's folder, and you can edit it by hand too:
+The names are kept in `.koe/speakers.json` in the recording's folder (`.koe` is hidden: in Finder press
+⌘⇧. to see it), and you can edit it by hand too:
 
 ```json
 {
@@ -316,7 +317,7 @@ What to expect, honestly:
   "motion" became "Notion". The price: if a term was heard as a real word ("Ark" for "Arc"), it stays as heard.
 - It can still pick the wrong word from the list when two are similar (on our test, Russian `Perkit` became
   `WhisperKit` instead of `Parakeet`). Keep the list to words you actually use.
-- What it changed is in `raw/<track>.json` (`vocabulary` next to the phrase) and in `pipeline.log`.
+- What it changed is in `.koe/raw/<track>.json` (`vocabulary` next to the phrase) and in `pipeline.log`.
 
 ### Settings
 
@@ -350,27 +351,41 @@ If a permission is missing when it's needed, the panel shows an orange card abou
 
 ## What you get
 
-Each recording gets its own folder:
+Each recording gets its own folder. In Finder you see two things in it, the transcript and the sound:
 
 ```
 ~/Documents/Koe/2026-10-28_1405/
     transcript.md      the transcript: a short header, then lines like "[00:12:34] Name: text"
-    raw/<track>.json   everything that was recognized on each track, with the time of every word;
-                       the "filtered" section keeps whatever was thrown away, and why
-    meta.json          where the recording came from, when and how it was transcribed
-    speakers.json      names of the voices and renamed microphones (set in Settings → Transcripts)
     audio/             the recording itself: mic.aac (mic-2.aac, mic-3.aac… with several microphones) and/or
-                       system.aac (.wav for Lossless), and session.json: the format, sample rate and channels
-                       of each track, its device and input, name and Transcribe, volume, gaps
+                       system.aac (.wav for Lossless)
 ```
+
+Koe's own working files sit next to them in a hidden `.koe` folder (in Finder, ⌘⇧. shows hidden files). You
+don't need them to read or listen, but keep them with the recording: they let Koe change speaker names without
+transcribing again, transcribe the recording again and notice your edits. They travel with the folder when you
+move or copy it.
+
+```
+    .koe/
+        meta.json          where the recording came from, when and how it was transcribed
+        speakers.json      names of the voices and renamed microphones (set in Settings → Transcripts)
+        session.json       the format, sample rate and channels of each track, its device and input, name
+                           and Transcribe, volume, gaps
+        raw/<track>.json   everything that was recognized on each track, with the time of every word;
+                           the "filtered" section keeps whatever was thrown away, and why
+```
+
+Recordings made with Koe 1.0.1 and earlier had these files right in the folder (and `session.json` in
+`audio/`). Koe moves them into `.koe` once, the first time it finds such a folder; the transcript and the
+audio stay where they are.
 
 The header of `transcript.md` says which tracks were recorded and whose sound is on the system audio track,
 for example `Recorded with Koe: microphone and system audio (Zoom, Telegram)`, `2 microphones and system audio
 (all apps)` or `only the microphone`, plus a line for every track that wasn't transcribed.
-`meta.json` has the same as lists: `source.tracks` (`["mic", "mic-2", "system"]`), `source.system_apps`
+`.koe/meta.json` has the same as lists: `source.tracks` (`["mic", "mic-2", "system"]`), `source.system_apps`
 (empty for all system audio) and `source.not_transcribed`.
 
-Transcribing a recording again only rewrites `transcript.md`, `raw/` and `meta.json`. Notes or anything
+Transcribing a recording again only rewrites `transcript.md` and the files in `.koe`. The audio, notes or anything
 else you put in the folder stay untouched. If you edited `transcript.md`, your version is kept as
 `transcript.edited-<date>.md`, and Koe tells you so.
 

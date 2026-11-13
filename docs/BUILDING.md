@@ -154,8 +154,9 @@ and survives quitting (`state/queue.json`). Name updates are jobs of the same qu
 | `menubar/TrackAudio.swift` | reading a track (AAC, WAV, RF64, also repaired after a crash) as 16 kHz mono |
 | `menubar/Engine.swift` | the recognizer (Parakeet through FluidAudio) behind one interface, Vocabulary, the speech detector and how speech is cut into pieces, where models go, the fine-tuning values (`Tuning`) |
 | `menubar/Voices.swift` | telling voices apart on the system audio track (FluidAudio's offline diarization), the 20-second rule, which voice each word belongs to |
-| `menubar/Transcriber.swift` | one recording → `transcript.md`, `raw/`, `meta.json`: tracks lined up, phrases, filters, echo and repeats between microphones, lines, protecting your edits |
-| `menubar/Names.swift` | updating names in finished transcripts without transcribing again, `speakers.json` (and turning old `speakers.toml` into it) |
+| `menubar/MeetingFolder.swift` | what's where in a transcript folder: `transcript.md` and `audio/` in sight, Koe's working files in the hidden `.koe`; moving the files of older folders there |
+| `menubar/Transcriber.swift` | one recording → `transcript.md`, `.koe/raw/`, `.koe/meta.json`: tracks lined up, phrases, filters, echo and repeats between microphones, lines, protecting your edits |
+| `menubar/Names.swift` | updating names in finished transcripts without transcribing again, `.koe/speakers.json` (and turning old `speakers.toml` into it) |
 | `menubar/TranscriptionQueue.swift` | the queue: order, pause, attempts, notifications, the list of recordings, when names need updating |
 | `menubar/Updates.swift` | automatic updates with Sparkle (release only), `--update-test` |
 | `menubar/build.sh`, `dmg.sh`, `dmg/background.swift`, `appcast.sh`, `Koe.entitlements` | building the app, the DMG and its window, the update feed, what the release may do |

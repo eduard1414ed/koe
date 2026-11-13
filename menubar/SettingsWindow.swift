@@ -8,7 +8,7 @@
 // (RecordingFormat.swift). The language isn't chosen: it's detected on each track (an old "language" in
 // settings.json is ignored).
 //
-// Speaker names for a recording live in speakers.json in its transcript folder. The Transcripts tab lists every transcript
+// Speaker names for a recording live in speakers.json in its transcript folder (in the hidden .koe, MeetingFolder.swift). The Transcripts tab lists every transcript
 // (Meetings.withSpeakers); a picked one shows its microphone tracks and the voices of system audio (Meetings.nameRows),
 // each with how long they talked and a few seconds of their speech to listen to. New names go to the transcription
 // queue as a job.

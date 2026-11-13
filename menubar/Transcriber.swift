@@ -1,6 +1,6 @@
 // Transcribing one recording (its folder with the tracks and session.json) into a transcript folder:
-// transcript.md, raw/<track>.json and meta.json — the same kind as the old Python pipeline wrote (it was
-// removed in stage 7). Step by step:
+// transcript.md, and .koe/raw/<track>.json and .koe/meta.json (MeetingFolder.swift) — the same kind as the old
+// Python pipeline wrote (it was removed in stage 7). Step by step:
 //   1. every track that's transcribed → 16 kHz mono, the encoder's silence cut off and the track moved to
 //      where it started on the recording's timeline (session.json), so the tracks' lines go side by side;
 //   2. the speech detector finds speech, the pieces go to the recognizer;
@@ -345,7 +345,7 @@ final class Transcriber {
         // the names given before (the Names window, speakers.json) stay: a new voice gets its label as its name
         let labels = tracks.flatMap { $0.speakers.map(\.label) }
         if !labels.isEmpty { SpeakerNames.addLabels(outDir, labels) }
-        if FileManager.default.fileExists(atPath: outDir.appendingPathComponent(SpeakerNames.file).path) {
+        if FileManager.default.fileExists(atPath: MeetingFolder.speakers(outDir).path) {
             try SpeakerNames.refresh(outDir, settings: settings, notify: notify)
         }
         progress(1)
@@ -465,7 +465,8 @@ final class Transcriber {
         var n = 1
         while true {
             let cand = meetings.appendingPathComponent(n == 1 ? base : "\(base)_\(n)")
-            let meta = cand.appendingPathComponent("meta.json")
+            MeetingFolder.tidy(cand)   // a folder of the old layout: its meta.json moves into .koe first
+            let meta = MeetingFolder.meta(cand)
             if !FileManager.default.fileExists(atPath: cand.path) { return cand }
             if FileManager.default.fileExists(atPath: meta.path),
                let src = readJSON(meta)["source"] as? [String: Any], "local:\(src["session_id"] ?? "")" == key {
@@ -476,34 +477,36 @@ final class Transcriber {
         }
     }
 
-    /// transcript.md, raw/ and meta.json. First everything goes into a temporary folder: a cut-off run won't
-    /// leave half a transcript. When transcribing again only these files change (notes, audio/ stay).
+    /// transcript.md, and .koe/raw/ and .koe/meta.json (MeetingFolder). First everything goes into a temporary folder:
+    /// a cut-off run won't leave half a transcript. When transcribing again only these files change (notes, audio/,
+    /// speakers.json stay).
     private func writeMeeting(_ outDir: URL, md: String, tracks: [TrackRun], meta: [String: Any],
                               notify: (String, String) -> Void) throws {
         let fm = FileManager.default
         try fm.createDirectory(at: outDir.deletingLastPathComponent(), withIntermediateDirectories: true)
         let tmp = outDir.deletingLastPathComponent().appendingPathComponent(outDir.lastPathComponent + ".partial")
         if fm.fileExists(atPath: tmp.path) { try fm.removeItem(at: tmp) }
-        try fm.createDirectory(at: tmp.appendingPathComponent("raw"), withIntermediateDirectories: true)
-        try Data(md.utf8).write(to: tmp.appendingPathComponent("transcript.md"))
-        for t in tracks { try jsonData(t.raw).write(to: tmp.appendingPathComponent(t.rawFile)) }
+        try fm.createDirectory(at: MeetingFolder.data(tmp).appendingPathComponent("raw"), withIntermediateDirectories: true)
+        try Data(md.utf8).write(to: MeetingFolder.transcript(tmp))
+        for t in tracks { try jsonData(t.raw).write(to: MeetingFolder.raw(tmp, t.rawFile)) }
         var meta = meta
         meta["transcript_sha256"] = sha256(md)
-        try jsonData(meta).write(to: tmp.appendingPathComponent("meta.json"))
+        try jsonData(meta).write(to: MeetingFolder.meta(tmp))
         if !fm.fileExists(atPath: outDir.path) {
             try fm.moveItem(at: tmp, to: outDir)
             return
         }
         protectManualEdits(outDir, newMarkdown: md, notify: notify)
-        let raw = outDir.appendingPathComponent("raw")
+        try fm.createDirectory(at: MeetingFolder.data(outDir), withIntermediateDirectories: true)
+        let raw = MeetingFolder.data(outDir).appendingPathComponent("raw")
         if fm.fileExists(atPath: raw.path) { try fm.removeItem(at: raw) }
-        try fm.moveItem(at: tmp.appendingPathComponent("raw"), to: raw)
-        for name in ["transcript.md", "meta.json"] {   // meta.json last: meta.json means "done"
-            let target = outDir.appendingPathComponent(name)
+        try fm.moveItem(at: MeetingFolder.data(tmp).appendingPathComponent("raw"), to: raw)
+        // meta.json last: meta.json means "done"
+        for (target, from) in [(MeetingFolder.transcript(outDir), MeetingFolder.transcript(tmp)), (MeetingFolder.meta(outDir), MeetingFolder.meta(tmp))] {
             if fm.fileExists(atPath: target.path) {
-                _ = try fm.replaceItemAt(target, withItemAt: tmp.appendingPathComponent(name))
+                _ = try fm.replaceItemAt(target, withItemAt: from)
             } else {
-                try fm.moveItem(at: tmp.appendingPathComponent(name), to: target)
+                try fm.moveItem(at: from, to: target)
             }
         }
         try? fm.removeItem(at: tmp)
@@ -558,16 +561,27 @@ func folderStamp(_ d: Date) -> String {
     return f.string(from: d)
 }
 
-/// session.json of a recording; it appearing means "the recording is ready". The recording's name is the id
-/// field, and for old recordings — the folder name (after the move into audio/ it comes from meta.json).
+/// A recording's session.json: next to the tracks while it's in the inbox; once the audio has moved into audio/ of
+/// its transcript — in .koe of that transcript (MeetingFolder), or still in audio/ if it couldn't be moved.
+func sessionFile(_ dir: URL) -> URL {
+    if dir.lastPathComponent == MeetingFolder.audioName {
+        let moved = MeetingFolder.session(dir.deletingLastPathComponent())
+        if FileManager.default.fileExists(atPath: moved.path) { return moved }
+    }
+    return dir.appendingPathComponent("session.json")
+}
+
+/// session.json of a recording (dir — where its tracks are); it appearing means "the recording is ready". The
+/// recording's name is the id field, and for old recordings — the folder name (after the move into audio/ it comes
+/// from meta.json).
 func readSession(_ dir: URL) throws -> [String: Any] {
-    let url = dir.appendingPathComponent("session.json")
+    let url = sessionFile(dir)
     guard let data = try? Data(contentsOf: url), var sess = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
         throw TranscriberError("can't read \(url.path)")
     }
     if (sess["id"] as? String ?? "").isEmpty {
-        let meta = dir.deletingLastPathComponent().appendingPathComponent("meta.json")
-        if dir.lastPathComponent == "audio", let src = readJSON(meta)["source"] as? [String: Any], let id = src["session_id"] as? String {
+        let meta = MeetingFolder.meta(dir.deletingLastPathComponent())
+        if dir.lastPathComponent == MeetingFolder.audioName, let src = readJSON(meta)["source"] as? [String: Any], let id = src["session_id"] as? String {
             sess["id"] = id
         } else {
             sess["id"] = dir.lastPathComponent
@@ -987,7 +1001,7 @@ func renderMarkdown(started: Date, zone: TimeZone, duration: Double, tracks: [Tr
     return md + "\n"
 }
 
-/// raw/<track>.json: the track's id without characters a file name can't have; a repeat gets _<number>.
+/// raw/<track>.json (in .koe): the track's id without characters a file name can't have; a repeat gets _<number>.
 func assignRawFiles(_ tracks: [TrackRun]) {
     var seen = Set<String>()
     for t in tracks {
@@ -1001,11 +1015,11 @@ func assignRawFiles(_ tracks: [TrackRun]) {
 /// Before transcript.md is overwritten: if it was edited by hand, keep a copy next to it.
 /// "Edited" = the file isn't what Koe wrote (the hash in meta.json). Old transcripts without a hash are kept too.
 func protectManualEdits(_ dir: URL, newMarkdown: String, notify: (String, String) -> Void) {
-    let path = dir.appendingPathComponent("transcript.md")
+    let path = MeetingFolder.transcript(dir)
     guard let data = try? Data(contentsOf: path) else { return }
     let current = String(decoding: data, as: UTF8.self)
     guard current != newMarkdown else { return }
-    if readJSON(dir.appendingPathComponent("meta.json"))["transcript_sha256"] as? String == sha256(current) { return }
+    if readJSON(MeetingFolder.meta(dir))["transcript_sha256"] as? String == sha256(current) { return }
     let f = DateFormatter()
     f.locale = Locale(identifier: "en_US_POSIX")
     f.dateFormat = "yyyy-MM-dd_HHmmss"
